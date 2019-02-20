@@ -26,8 +26,8 @@
     }
   ],
   "license": "MIT",
-  "main": "dist/main.js",
-  "module": "dist/main.js",
+  "main": "src/ui/umd.js",
+  "module": "src/ui/umd.js",
   "private": true,
   "dependencies": {
     "@jscad/core": "^0.4.0",

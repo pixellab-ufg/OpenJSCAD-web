@@ -1,28 +1,35 @@
-/**
- * @prettier
- */
 // const log = require('./log')
 const getParameterDefinitions = require('@jscad/core/parameters/getParameterDefinitions')
 const getParameterValues = require('@jscad/core/parameters/getParameterValuesFromUIControls')
 const {
   rebuildSolids,
-  rebuildSolidsInWorker,
+  rebuildSolidsInWorker
 } = require('@jscad/core/code-evaluation/rebuildSolids')
-const { mergeSolids } = require('@jscad/core/utils/mergeSolids')
+const {
+  mergeSolids
+} = require('@jscad/core/utils/mergeSolids')
 
 // output handling
-const { generateOutputFile } = require('../io/generateOutputFile')
-const { prepareOutput } = require('@jscad/core/io/prepareOutput')
-const { convertToBlob } = require('@jscad/core/io/convertToBlob')
+const {
+  generateOutputFile
+} = require('../io/generateOutputFile')
+const {
+  prepareOutput
+} = require('@jscad/core/io/prepareOutput')
+const {
+  convertToBlob
+} = require('@jscad/core/io/convertToBlob')
 const {
   formats,
-  supportedFormatsForObjects,
+  supportedFormatsForObjects
 } = require('@jscad/core/io/formats')
-const { revokeBlobUrl } = require('../io/utils')
+const {
+  revokeBlobUrl
+} = require('../io/utils')
 
 const Viewer = require('../ui/viewer/jscad-viewer')
 
-function Processor(containerdiv, options) {
+function Processor (containerdiv, options) {
   if (options === undefined) options = {}
   // the default options
   this.opts = {
@@ -31,7 +38,7 @@ function Processor(containerdiv, options) {
     openJsCadPath: '',
     useAsync: true,
     useSync: true,
-    viewer: {},
+    viewer: {}
   }
   // apply all options found
   for (var x in this.opts) {
@@ -89,7 +96,8 @@ function Processor(containerdiv, options) {
       if (!this[e]) this[e] = options.processor[e]
     }
 
-    this.viewer = new Viewer(options.processor.viewerdiv, this.opts.viewer)
+    // this.viewer = new Viewer(options.processor.viewerdiv, this.opts.viewer)
+    this.viewer = new Viewer(this.containerdiv, this.opts.viewer)
   } catch (e) {
     console.error('viewer error', e)
     if (options.init.onUpdate) {
@@ -103,13 +111,20 @@ function Processor(containerdiv, options) {
 Processor.mergeSolids = mergeSolids
 
 Processor.prototype = {
-  setCurrentObjects: function(objs) {
+  /**
+   *
+   * @param {*} objs
+   */
+  setCurrentObjects: function (objs) {
     this.currentObjects = objs // list of CAG or CSG objects
     this.updateView()
     if (this.onchange) this.onchange(this)
   },
 
-  updateView: function() {
+  /**
+   *
+   */
+  updateView: function () {
     var objs = this.currentObjects.slice()
     this.viewedObject = mergeSolids(objs)
 
@@ -118,7 +133,10 @@ Processor.prototype = {
     }
   },
 
-  clearViewer: function() {
+  /**
+   *
+   */
+  clearViewer: function () {
     this.clearOutputFile()
     if (this.viewedObject) {
       this.viewer.clear()
@@ -128,11 +146,14 @@ Processor.prototype = {
     this.enableItems()
   },
 
-  abort: function() {
+  /**
+   *
+   */
+  abort: function () {
     // abort if state is processing
     if (this.state === 1) {
       // todo: abort
-      this.setStatus('aborted')
+      // this.setStatus('aborted')
       this.builder.cancel()
       this.state = 3 // incomplete
       this.enableItems()
@@ -144,7 +165,7 @@ Processor.prototype = {
    * enableItems is used to send an `onUpdate` with curent information
    * like formats and the outputFile
    */
-  enableItems: function() {
+  enableItems: function () {
     this.onUpdate({
       formats: supportedFormatsForObjects(this.currentObjects.slice())
         .filter(x => x !== 'stl')
@@ -152,14 +173,18 @@ Processor.prototype = {
           formats[ext] = this.formatInfo(ext)
           return formats
         }, {}), // exclude 'stl' since it is an alias for stl(ascii) or stl(binary)
-      outputFile: this.outputFile,
+      outputFile: this.outputFile
     })
   },
 
-  // script: javascript code
-  // filename: optional, the name of the .jscad file
-  setJsCad: function(script, filename, includePathBaseUrl) {
-    // console.log('setJsCad', script, filename)
+  /**
+   *
+   * @param {*} script javascript code
+   * @param {*} filename optional, the name of the .jscad file
+   * @param {*} includePathBaseUrl
+   */
+  setJsCad: function (script, filename, includePathBaseUrl) {
+    console.debug('setJsCad', script, filename)
     if (!filename) filename = 'openjscad.jscad'
 
     var prevParamValues = {}
@@ -167,7 +192,8 @@ Processor.prototype = {
     try {
       prevParamValues = getParameterValues(
         this.paramControls,
-        /* onlyChanged */ true
+        /* onlyChanged */
+        true
       )
     } catch (e) {}
 
@@ -183,7 +209,7 @@ Processor.prototype = {
       this.paramControls = []
       this.createParamControls(prevParamValues)
     } catch (e) {
-      this.setStatus('error', e)
+      // this.setStatus('error', e)
       scripthaserrors = true
     }
     if (!scripthaserrors) {
@@ -196,13 +222,16 @@ Processor.prototype = {
     }
   },
 
-  rebuildSolids: function() {
+  /**
+   *
+   */
+  rebuildSolids: function () {
     // clear previous solid and settings
     this.abort()
-    //this clears output file cache
+    // this clears output file cache
     this.clearOutputFile()
 
-    this.setStatus('rendering')
+    // this.setStatus('rendering')
 
     // rebuild the solid
 
@@ -212,11 +241,14 @@ Processor.prototype = {
     const fullurl = this.includePathBaseUrl
       ? this.includePathBaseUrl + this.filename
       : this.filename
-    const options = { memFs: this.memFs }
+    const options = {
+      memFs: this.memFs
+    }
 
     this.state = 1 // processing
     let that = this
-    function callback(err, objects) {
+
+    function callback (err, objects) {
       if (err) {
         that.clearViewer()
 
@@ -225,11 +257,11 @@ Processor.prototype = {
           errtxt += '\nStack trace:\n' + err.stack
           //    var errtxt = err.toString()
         }
-        that.setStatus('error', err) // 'Error.'
+        // that.setStatus('error', err) // 'Error.'
         that.state = 3 // incomplete
       } else {
         that.setCurrentObjects(objects)
-        that.setStatus('ready')
+        // that.setStatus('ready')
         that.state = 2 // complete
       }
       that.enableItems()
@@ -266,18 +298,22 @@ Processor.prototype = {
 
   /**
    * Return the current processor state.
+   *
    * @returns {ProcessorState}
    */
-  getState: function() {
+  getState: function () {
     return this.state
   },
 
-  clearOutputFile: function() {
+  /**
+   *
+   */
+  clearOutputFile: function () {
     if (this.hasOutputFile) {
       this.hasOutputFile = false
       this.outputFile = undefined
       if (this.outputFileDirEntry) {
-        this.outputFileDirEntry.removeRecursively(function() {})
+        this.outputFileDirEntry.removeRecursively(function () {})
         this.outputFileDirEntry = null
       }
       if (this.outputFileBlobUrl) {
@@ -290,15 +326,21 @@ Processor.prototype = {
 
   /**
    * Generate a output file.  Read the resulting OutputFile in the `onUpdate` hook.
+   *
    * @param {FormatInfo} format
    */
-  generateOutputFile: function(format) {
+  generateOutputFile: function (format) {
     this.clearOutputFile()
     const blob = this.currentObjectsToBlob(format)
 
-    function onDone(data, downloadAttribute, blobMode, noData) {
+    function onDone (data, downloadAttribute, blobMode, noData) {
       this.hasOutputFile = true
-      this.outputFile = { data, downloadAttribute, blobMode, noData }
+      this.outputFile = {
+        data,
+        downloadAttribute,
+        blobMode,
+        noData
+      }
       this.enableItems()
     }
 
@@ -308,25 +350,33 @@ Processor.prototype = {
     }
   },
 
-  currentObjectsToBlob: function(format) {
+  /**
+   *
+   * @param {*} format
+   */
+  currentObjectsToBlob: function (format) {
     // if output format is jscad or js , use that, otherwise use currentObjects
     const objects =
       format.mimetype === 'application/javascript'
         ? this.script
         : this.currentObjects.slice()
 
-    return convertToBlob(prepareOutput(objects, { format: format.name }))
+    return convertToBlob(prepareOutput(objects, {
+      format: format.name
+    }))
   },
 
-  formatInfo: function(format) {
+  formatInfo: function (format) {
     return this.formats[format]
   },
 
   /**
    * Original control creation methods.
+   *
+   * @param {*} definition
    */
 
-  createGroupControl: function(definition) {
+  createGroupControl: function (definition) {
     var control = document.createElement('title')
     control.paramName = definition.name
     control.paramType = definition.type
@@ -339,12 +389,17 @@ Processor.prototype = {
     return control
   },
 
-  createChoiceControl: function(definition, prevValue) {
+  /**
+   *
+   * @param {*} definition
+   * @param {*} prevValue
+   */
+  createChoiceControl: function (definition, prevValue) {
     if (!('values' in definition)) {
       throw new Error(
         'Definition of choice parameter (' +
-          definition.name +
-          ") should include a 'values' parameter"
+        definition.name +
+        ") should include a 'values' parameter"
       )
     }
     var control = document.createElement('select')
@@ -357,8 +412,8 @@ Processor.prototype = {
       if (captions.length != values.length) {
         throw new Error(
           'Definition of choice parameter (' +
-            definition.name +
-            ") should have the same number of items for 'captions' and 'values'"
+          definition.name +
+          ") should have the same number of items for 'captions' and 'values'"
         )
       }
     } else {
@@ -390,126 +445,130 @@ Processor.prototype = {
     return control
   },
 
-  createControl: function(definition, prevValue) {
-    var control_list = [
-      {
-        type: 'text',
-        control: 'text',
-        required: ['index', 'type', 'name'],
-        initial: '',
-      },
-      {
-        type: 'int',
-        control: 'number',
-        required: ['index', 'type', 'name'],
-        initial: 0,
-      },
-      {
-        type: 'float',
-        control: 'number',
-        required: ['index', 'type', 'name'],
-        initial: 0.0,
-      },
-      {
-        type: 'number',
-        control: 'number',
-        required: ['index', 'type', 'name'],
-        initial: 0.0,
-      },
-      {
-        type: 'checkbox',
-        control: 'checkbox',
-        required: ['index', 'type', 'name', 'checked'],
-        initial: '',
-      },
-      {
-        type: 'radio',
-        control: 'radio',
-        required: ['index', 'type', 'name', 'checked'],
-        initial: '',
-      },
-      {
-        type: 'color',
-        control: 'color',
-        required: ['index', 'type', 'name'],
-        initial: '#000000',
-      },
-      {
-        type: 'date',
-        control: 'date',
-        required: ['index', 'type', 'name'],
-        initial: '',
-      },
-      {
-        type: 'email',
-        control: 'email',
-        required: ['index', 'type', 'name'],
-        initial: '',
-      },
-      {
-        type: 'password',
-        control: 'password',
-        required: ['index', 'type', 'name'],
-        initial: '',
-      },
-      {
-        type: 'url',
-        control: 'url',
-        required: ['index', 'type', 'name'],
-        initial: '',
-      },
-      {
-        type: 'slider',
-        control: 'range',
-        required: ['index', 'type', 'name', 'min', 'max'],
-        initial: 0,
-        label: true,
-      },
+  /**
+   *
+   * @param {*} definition
+   * @param {*} prevValue
+   */
+  createControl: function (definition, prevValue) {
+    var controlList = [{
+      type: 'text',
+      control: 'text',
+      required: ['index', 'type', 'name'],
+      initial: ''
+    },
+    {
+      type: 'int',
+      control: 'number',
+      required: ['index', 'type', 'name'],
+      initial: 0
+    },
+    {
+      type: 'float',
+      control: 'number',
+      required: ['index', 'type', 'name'],
+      initial: 0.0
+    },
+    {
+      type: 'number',
+      control: 'number',
+      required: ['index', 'type', 'name'],
+      initial: 0.0
+    },
+    {
+      type: 'checkbox',
+      control: 'checkbox',
+      required: ['index', 'type', 'name', 'checked'],
+      initial: ''
+    },
+    {
+      type: 'radio',
+      control: 'radio',
+      required: ['index', 'type', 'name', 'checked'],
+      initial: ''
+    },
+    {
+      type: 'color',
+      control: 'color',
+      required: ['index', 'type', 'name'],
+      initial: '#000000'
+    },
+    {
+      type: 'date',
+      control: 'date',
+      required: ['index', 'type', 'name'],
+      initial: ''
+    },
+    {
+      type: 'email',
+      control: 'email',
+      required: ['index', 'type', 'name'],
+      initial: ''
+    },
+    {
+      type: 'password',
+      control: 'password',
+      required: ['index', 'type', 'name'],
+      initial: ''
+    },
+    {
+      type: 'url',
+      control: 'url',
+      required: ['index', 'type', 'name'],
+      initial: ''
+    },
+    {
+      type: 'slider',
+      control: 'range',
+      required: ['index', 'type', 'name', 'min', 'max'],
+      initial: 0,
+      label: true
+    }
     ]
     // check for required parameters
     if (!('type' in definition)) {
       throw new Error(
         'Parameter definition (' +
-          definition.index +
-          ") must include a 'type' parameter"
+        definition.index +
+        ") must include a 'type' parameter"
       )
     }
     var control = document.createElement('input')
-    var i, j, c_type, p_name
-    for (i = 0; i < control_list.length; i++) {
-      c_type = control_list[i]
-      if (c_type.type === definition.type) {
-        for (j = 0; j < c_type.required.length; j++) {
-          p_name = c_type.required[j]
-          if (p_name in definition) {
-            if (p_name === 'index') continue
-            if (p_name === 'type') continue
-            if (p_name === 'checked') {
+    var i, j, CType, PName
+    for (i = 0; i < controlList.length; i++) {
+      CType = controlList[i]
+      if (CType.type === definition.type) {
+        for (j = 0; j < CType.required.length; j++) {
+          PName = CType.required[j]
+          if (PName in definition) {
+            if (PName === 'index') continue
+            if (PName === 'type') continue
+            if (PName === 'checked') {
               // setAttribute() only accepts strings
               control.checked = definition.checked
             } else {
-              control.setAttribute(p_name, definition[p_name])
+              control.setAttribute(PName, definition[PName])
             }
           } else {
             throw new Error(
               'Parameter definition (' +
-                definition.index +
-                ") must include a '" +
-                p_name +
-                "' parameter"
+              definition.index +
+              ") must include a '" +
+              PName +
+              "' parameter"
             )
           }
         }
         break
       }
     }
-    if (i === control_list.length) {
+    if (i === controlList.length) {
       throw new Error(
         'Parameter definition (' + definition.index + ") is not a valid 'type'"
       )
     }
     // set the control type
-    control.setAttribute('type', c_type.control)
+    control.setAttribute('type', CType.control)
     // set name and type for obtaining values
     control.paramName = definition.name
     control.paramType = definition.type
@@ -521,25 +580,30 @@ Processor.prototype = {
     } else if ('default' in definition) {
       control.value = definition.default
     } else {
-      control.value = c_type.initial
+      control.value = CType.initial
     }
     // set generic HTML attributes
     for (var property in definition) {
       if (definition.hasOwnProperty(property)) {
-        if (c_type.required.indexOf(property) < 0) {
+        if (CType.required.indexOf(property) < 0) {
           control.setAttribute(property, definition[property])
         }
       }
     }
     // add a label if necessary
-    if ('label' in c_type) {
+    if ('label' in CType) {
       control.label = document.createElement('label')
       control.label.innerHTML = control.value
     }
     return control
   },
 
-  createParamControls: function(prevParamValues) {
+  /**
+   * Create a HTML form to be used in the webpage.
+   *
+   * @param {*} prevParamValues
+   */
+  createParamControls: function (prevParamValues) {
     this.parameterstable.innerHTML = ''
     this.paramControls = []
 
@@ -575,7 +639,7 @@ Processor.prototype = {
       } else {
         // implementing instantUpdate
         var that = this
-        control.onchange = function(e) {
+        control.onchange = function (e) {
           var l = e.currentTarget.nextElementSibling
           if (l !== null && l.nodeName === 'LABEL') {
             l.innerHTML = e.currentTarget.value
@@ -604,7 +668,7 @@ Processor.prototype = {
       }
       this.parameterstable.appendChild(tr)
     }
-  },
+  }
 }
 
 module.exports = Processor

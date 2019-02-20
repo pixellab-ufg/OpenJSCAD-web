@@ -19,7 +19,7 @@ var gProcessor = null
  * @param {Object} viewer - A DOM element to use as the base element.
  * @param {JscadViewerOptions} options - options passed to the viewer processor
  */
-function init(viewer, options) {
+function init (viewer, options) {
   const versionText = 'UMD OpenJSCAD.org Version ' + version
   console.log('umd init', versionText, options)
 
@@ -34,13 +34,13 @@ function init(viewer, options) {
   if (design) {
     var xhr = new XMLHttpRequest()
     xhr.open('GET', design, true)
-    gProcessor.setStatus('Loading ' + design)
+    // gProcessor.setStatus('Loading ' + design)
 
-    xhr.onload = function() {
+    xhr.onload = function () {
       var source = this.responseText
 
       if (design.match(/\.jscad$/i) || design.match(/\.js$/i)) {
-        gProcessor.setStatus('Processing ' + design)
+        // gProcessor.setStatus('Processing ' + design)
         gProcessor.setJsCad(source, design)
       }
     }
@@ -53,29 +53,29 @@ function init(viewer, options) {
      * the file has been created, the `
      * @param {FormatInfo} format
      */
-    generateOutputFile: function(format) {
+    generateOutputFile: function (format) {
       return gProcessor.generateOutputFile(format)
     },
 
-    clearOutputFile: function() {
+    clearOutputFile: function () {
       return gProcessor.clearOutputFile()
     },
 
-    resetCamera() {
+    resetCamera () {
       return gProcessor.viewer.resetCamera()
     },
 
-    abort() {
+    abort () {
       return gProcessor.abort()
     },
 
-    setJsCad(source, design) {
+    setJsCad (source, design) {
       gProcessor.setJsCad(source, design)
     },
 
-    rebuildSolids() {
+    rebuildSolids () {
       gProcessor.rebuildSolids()
-    },
+    }
   }
 }
 
